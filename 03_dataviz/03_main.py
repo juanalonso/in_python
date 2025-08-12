@@ -5,8 +5,11 @@
 # en el futuro lo lejos que está un instrumentista de otro.
 
 from mido import MidiFile, MidiTrack, Message, MetaMessage, bpm2tempo
-from patterns import patterns, c, r, b
+from patterns import patterns, r, b, n, c
 import random
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
+# import numpy as np
 
 
 def create_midi_score(num_tracks, instruments, bpm=120):
@@ -73,14 +76,7 @@ def save_score_to_midi(midi_file, filename="output.mid"):
     midi_file.save(filename)
 
 
-# def get_track_duration(track):
-#     return int(2 * sum(msg.time for msg in track) / MidiFile.ticks_per_beat)
-
-
-def get_track_duration(track, debug=False):
-    if debug:
-        print(f"Duración de la pista: {len(track)} mensajes")
-        print(track)
+def get_track_duration(track):
     return track[-1][1] + track[-1][2]
 
 
@@ -145,7 +141,7 @@ for track_index in range(NUM_PLAYERS - 1):
     score[track_index].append((-1, 0, offset))
 
     for i in range(1, len(patterns)):
-        for rep in range(random.randint(3, 6)):
+        for rep in range(random.randint(4, 10)):
             pattern_duration = get_pattern_duration(patterns[i])
             score[track_index].append((i, offset, pattern_duration))
             offset += pattern_duration
@@ -193,3 +189,32 @@ for track_index in range(NUM_PLAYERS):
 
 
 save_score_to_midi(midi_score, "in_python_v03.mid")
+
+resolution = n
+drift = []
+for position in range(0, max_dur, resolution):
+    pattern_high = -1
+    pattern_low = 999
+    for track_index in range(NUM_PLAYERS - 1):
+        for pattern_id, offset, duration in score[track_index]:
+            if offset <= position < offset + duration:
+                pattern_high = max(pattern_high, pattern_id if pattern_id != -1 else 0)
+                pattern_low = min(pattern_low, pattern_id if pattern_id != -1 else 0)
+    # print(
+    #     f"{position:>6} |",
+    #     f"{pattern_high - pattern_low}"
+    # )
+    drift.append(pattern_high - pattern_low)
+
+colors = ["green" if v <= 3 else ("orange" if v <= 5 else "red") for v in drift]
+
+plt.figure(figsize=(12, 3))
+plt.grid(True, color='#ddd', linestyle='-', linewidth=0.5, zorder=0)  # Grid más visible y detrás
+plt.scatter(range(len(drift)), drift, c=colors, marker="o", s=10, zorder=2)  # Puntos encima
+plt.title("Separación entre intérpretes")
+plt.xlabel("Tiempo (en negras)")
+plt.ylabel("Distancia")
+plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
+
+# Mostrar gráfico
+plt.show()
