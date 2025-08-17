@@ -9,6 +9,7 @@ from patterns import patterns, r, b, n, c
 import random
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
+
 # import numpy as np
 
 
@@ -200,10 +201,6 @@ for position in range(0, max_dur, resolution):
             if offset <= position < offset + duration:
                 pattern_high = max(pattern_high, pattern_id if pattern_id != -1 else 0)
                 pattern_low = min(pattern_low, pattern_id if pattern_id != -1 else 0)
-    # print(
-    #     f"{position:>6} |",
-    #     f"{pattern_high - pattern_low}"
-    # )
     drift.append(pattern_high - pattern_low)
 
 colors = ["green" if v <= 3 else ("orange" if v <= 5 else "red") for v in drift]
@@ -217,4 +214,36 @@ plt.ylabel("Distancia")
 plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
 
 # Mostrar gráfico
+plt.show()
+
+
+resolution = n
+tracks_to_plot = [0, 1, 2, 3, 4, 5]
+drifts = {track: [] for track in tracks_to_plot}
+for position in range(0, max_dur, resolution):
+    for track_index in tracks_to_plot:
+        for pattern_id, offset, duration in score[track_index]:
+            if offset <= position < offset + duration:
+                drifts[track_index].append(pattern_id + 1)
+
+
+plt.figure(figsize=(12, 6))
+plt.grid(
+    True, color="#ddd", linestyle="-", linewidth=0.5, zorder=0
+)  # Grid más visible y detrás
+for i, track in enumerate(tracks_to_plot):
+    plt.plot(
+        range(len(drifts[track])),
+        drifts[track],
+        # marker="o",
+        # markersize=1,
+        label=f"Intérprete {track+1}",
+        alpha=0.7,
+        zorder=2,
+    )
+plt.title("Frases por intérprete")
+plt.xlabel("Tiempo (en negras)")
+plt.ylabel("Frase")
+plt.legend()
+plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
 plt.show()
